@@ -6,6 +6,7 @@ import (
 	"log/syslog"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -25,10 +26,9 @@ func reflect(ip string, port, timeout, reset int) {
 	defer conn.Close()
 
 	resetTimeout := time.Duration(reset) * time.Second
-	lastReceived := time.Now()
+	lastReceived, f0, f1 := time.Now(), 0, 1
 	firstPacket := true
-	buffer := make([]byte, 512)
-	f0, f1 := 0, 1
+	buffer := make([]byte, 2048)
 	for {
 		if time.Now().Sub(lastReceived) > resetTimeout {
 			log.Printf("Exceeded silence deadline of %v seconds, resetting ...\n", reset)
@@ -54,7 +54,7 @@ func reflect(ip string, port, timeout, reset int) {
 			if firstPacket {
 				log.Printf("Received first packet in stream.\n")
 			}
-			lastReceived = time.Now()
+			lastReceived, f0, f1 = time.Now(), 0, 1
 			_, err := conn.WriteToUDP(buffer[0:n], remote)
 			if err != nil {
 				log.Fatal(err)
@@ -65,10 +65,11 @@ func reflect(ip string, port, timeout, reset int) {
 }
 
 func main() {
-	logwriter, err := syslog.New(syslog.LOG_INFO, os.Args[0])
+	logwriter, err := syslog.New(syslog.LOG_INFO, filepath.Base(os.Args[0]))
 	if err == nil {
 		log.SetOutput(logwriter)
 	}
+
 	listenIP := flag.String("ip", "0.0.0.0", "Target IP to ping with UDP traffic")
 	listenUDPPort := flag.Int("port", 36000, "UDP port to send traffic on")
 	silenceTimeout := flag.Int("timeout", 2, "msec increments for timeout sequence")
