@@ -70,10 +70,10 @@ func main() {
 		log.SetOutput(logwriter)
 	}
 
-	listenIP := flag.String("ip", "0.0.0.0", "Target IP to ping with UDP traffic")
-	listenUDPPort := flag.Int("port", 36000, "UDP port to send traffic on")
-	silenceTimeout := flag.Int("timeout", 2, "msec increments for timeout sequence")
-	resetTimeout := flag.Int("reset", 120, "sec after which to reset for new stream")
+	listenIP := flag.String("ip", "0.0.0.0", "Local IP to listen on")
+	listenUDPPort := flag.Int("port", 36000, "UDP port to listen on")
+	silenceTimeout := flag.Int("timeout", 2, "millisecond seed for timeout notification sequence")
+	resetTimeout := flag.Int("reset", 120, "seconds after which to reset and wait for new stream")
 	flag.Parse()
 
 	reflect(*listenIP, *listenUDPPort, *silenceTimeout, *resetTimeout)
