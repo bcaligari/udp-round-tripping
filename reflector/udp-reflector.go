@@ -65,16 +65,19 @@ func reflect(ip string, port, timeout, reset int) {
 }
 
 func main() {
-	logwriter, err := syslog.New(syslog.LOG_INFO, filepath.Base(os.Args[0]))
-	if err == nil {
-		log.SetOutput(logwriter)
-	}
-
 	listenIP := flag.String("ip", "0.0.0.0", "Local IP to listen on")
 	listenUDPPort := flag.Int("port", 36000, "UDP port to listen on")
 	silenceTimeout := flag.Int("timeout", 2, "millisecond seed for timeout notification sequence")
 	resetTimeout := flag.Int("reset", 120, "seconds after which to reset and wait for new stream")
+	logToSyslog := flag.Bool("syslog", false, "Log to syslog")
 	flag.Parse()
+
+	if *logToSyslog {
+		logwriter, err := syslog.New(syslog.LOG_INFO, filepath.Base(os.Args[0]))
+		if err == nil {
+			log.SetOutput(logwriter)
+		}
+	}
 
 	reflect(*listenIP, *listenUDPPort, *silenceTimeout, *resetTimeout)
 }
