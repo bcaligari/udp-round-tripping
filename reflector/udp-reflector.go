@@ -55,10 +55,11 @@ func reflect(ip string, port, timeout, reset int) {
 				log.Printf("Received first packet in stream.\n")
 			}
 			lastReceived, f0, f1 = time.Now(), 0, 1
-			_, err := conn.WriteToUDP(buffer[0:n], remote)
-			if err != nil {
-				log.Fatal(err)
-			}
+			conn.WriteToUDP(buffer[0:n], remote)
+			//_, err := conn.WriteToUDP(buffer[0:n], remote)
+			//if err != nil {
+			//	log.Fatal(err)
+			//}
 			firstPacket = false
 		}
 	}
