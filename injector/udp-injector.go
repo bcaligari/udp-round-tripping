@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func ping(target string, port, interval, duration int) {
+func ping(target string, port, interval, duration int, logErrors bool) {
 	log.Printf("Pinging %v:%v with %v microsecond intervals for %v seconds.\n",
 		target, port, interval, duration)
 
@@ -36,8 +36,8 @@ func ping(target string, port, interval, duration int) {
 	for {
 		if quitAfter > 0 && time.Now().Sub(startTime) > quitAfter {
 			log.Printf("Reached the end of my %v second run.\n", duration)
-			log.Printf("Total sent: %d, total received: %d\n", totalSent, totalReceived)
-			log.Printf("Write errors: %d, read errors: %d\n", errorsWrite, errorsRead)
+			log.Printf("Sent: %d total, %d errors\n", totalSent, errorsWrite)
+			log.Printf("Recv: %d total, %d errors\n", totalReceived, errorsRead)
 			return
 		}
 		udpTimeStamp := time.Now().UnixNano()
@@ -48,6 +48,9 @@ func ping(target string, port, interval, duration int) {
 		totalSent++
 		if err != nil {
 			errorsWrite++
+			if logErrors {
+				log.Println(err)
+			}
 		}
 		deadline := time.Now().Add(time.Duration(nanoInterval))
 		conn.SetReadDeadline(deadline)
@@ -56,10 +59,11 @@ func ping(target string, port, interval, duration int) {
 			if err != nil {
 				if e, ok := err.(net.Error); ok && e.Timeout() {
 					break
-				} else {
-					errorsRead++
 				}
-				log.Println(err)
+				if logErrors {
+					log.Println(err)
+				}
+				errorsRead++
 			} else {
 				totalReceived++
 				fmt.Printf("<< %d\n", int64(binary.LittleEndian.Uint64(buffer[0:n])))
@@ -71,9 +75,11 @@ func ping(target string, port, interval, duration int) {
 func main() {
 	targetServer := flag.String("target", "127.0.0.1", "Target IP to ping with UDP traffic")
 	targetUDPPort := flag.Int("port", 36000, "UDP port to send traffic on")
+	// recommend a minimum of 150
 	sendInterval := flag.Int("interval", 500, "microsecond interval between UDP sends")
 	quitAfter := flag.Int("quit", 300, "seconds after which to quit")
 	logToSyslog := flag.Bool("syslog", false, "Log to syslog")
+	logErrors := flag.Bool("logerrors", false, "Whether to log net write/read errors")
 	flag.Parse()
 
 	if *logToSyslog {
@@ -83,5 +89,5 @@ func main() {
 		}
 	}
 
-	ping(*targetServer, *targetUDPPort, *sendInterval, *quitAfter)
+	ping(*targetServer, *targetUDPPort, *sendInterval, *quitAfter, *logErrors)
 }
